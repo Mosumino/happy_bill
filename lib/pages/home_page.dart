@@ -12,6 +12,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Usamos addPostFrameCallback para asegurarnos de que el contexto esté disponible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GastoDatabase>(context, listen: false).leerGastos();
+    });
+  }
+
   void abrirNuevoGasto() {
     showDialog(
       context: context,
@@ -20,13 +29,12 @@ class _HomePageState extends State<HomePage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            //input del nombre del gasto
+            // Input del nombre del gasto
             TextField(
               controller: controladorNombre,
               decoration: const InputDecoration(hintText: "Nombre"),
             ),
-
-            //input del valor
+            // Input del valor
             TextField(
               controller: controladorValor,
               decoration: const InputDecoration(hintText: "Valor"),
@@ -34,46 +42,57 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
-          //cancelar
+          // Cancelar
           _botonCancelar(),
-
-          //guardar
+          // Guardar
           _botonGuardar(),
         ],
       ),
     );
   }
 
-  //controladores de texto
+  // Controladores de texto
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorValor = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      //boton flotante en el centro para tratar de emular mejor el mockup
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20.0), // Para evitar que el boton quede muy abajo
-        child: FloatingActionButton(
-          onPressed: abrirNuevoGasto,
-          backgroundColor: Colors.blue[700],
-          foregroundColor: Colors.white,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add),
+    return Consumer<GastoDatabase>(
+      builder: (context, value, child) => Scaffold(
+        // Botón flotante en el centro para tratar de emular mejor el mockup
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 20.0), // Para evitar que el botón quede muy abajo
+          child: FloatingActionButton(
+            onPressed: abrirNuevoGasto,
+            backgroundColor: Colors.blue[700],
+            foregroundColor: Colors.white,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add),
+          ),
+        ),
+        body: ListView.builder(
+          itemCount: value.todoslosgastos.length,
+          itemBuilder: (context, index) {
+            // Conseguir el gasto individual
+            Gasto gastoIndividual = value.todoslosgastos[index];
+            return ListTile(
+              title: Text(gastoIndividual.nombre),
+              trailing: Text(gastoIndividual.valor.toString()),
+            );
+          },
         ),
       ),
     );
   }
 
-  //cancelar 
+  // Cancelar 
   Widget _botonCancelar() {
     return MaterialButton(
       onPressed: () {
-        //cerrar
+        // Cerrar
         Navigator.pop(context);
-
-        //restablecer el estado de los controladores
+        // Restablecer el estado de los controladores
         controladorNombre.clear();
         controladorValor.clear();
       },
@@ -81,32 +100,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //guardar
+  // Guardar
   Widget _botonGuardar() {
     return MaterialButton(
-      onPressed: () async{
-        //solo guarda si hay algo en el textfield
+      onPressed: () async {
+        // Solo guarda si hay algo en el TextField
         if (controladorNombre.text.isNotEmpty && controladorValor.text.isNotEmpty) {
-          //cerrar
+          // Cerrar
           Navigator.pop(context);
-
-          //crear nuevo gasto
+          // Crear nuevo gasto
           Gasto nuevoGasto = Gasto(
             nombre: controladorNombre.text,
             valor: convertirStringaDouble(controladorValor.text),
             fecha: DateTime.now(),
           );
-          
-          //guardarlo en la base de datos
-
+          // Guardarlo en la base de datos
           await context.read<GastoDatabase>().crearGastoNuevo(nuevoGasto);
-
-          //restablecer controladores
+          // Restablecer controladores
           controladorNombre.clear();
           controladorValor.clear();
         }
       },
-      child: Text("Guardar"),
+      child: const Text("Guardar"),
     );
   }
 }
