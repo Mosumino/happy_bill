@@ -55,20 +55,20 @@ Future<void>actualizarGasto(int id, Gasto actualizarGasto) async{
   //leerlo otra vez
 
   await leerGastos();
-
+}
   //eliminarlo 
 
-  Future<void> eliminarGasto(int id) async{
-    //borarlo de la base de datos 
-    await isar.writeTxn(() => isar.gastos.delete(id));
+Future<void> eliminarGasto(int id) async{
+  //borrarlo de la base de datos 
+  await isar.writeTxn(() => isar.gastos.delete(id));
 
-    //leerlo de la base de datos 
+  //leerlo de la base de datos 
 
-    await leerGastos();
+  await leerGastos();
 
 
   }
-}
+
 
 
 

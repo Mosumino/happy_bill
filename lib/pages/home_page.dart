@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happy_bill/components/mi_lista_tile.dart';
 import 'package:happy_bill/database/gasto_database.dart';
 import 'package:happy_bill/helper_functions/helper_functions.dart';
 import 'package:happy_bill/models/gasto.dart';
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Nuevo gasto"),
+        title: const Center(child: Text("Nuevo gasto")),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -46,6 +47,55 @@ class _HomePageState extends State<HomePage> {
           _botonCancelar(),
           // Guardar
           _botonGuardar(),
+        ],
+      ),
+    );
+  }
+
+  void openEditBox(Gasto gasto) {
+    // Llenar valores preexistentes en los textfields
+    String nombreExistente = gasto.nombre;
+    String valorExistente = gasto.valor.toString();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Center(child: Text("Editar gasto")),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Input del nombre del gasto
+            TextField(
+              controller: controladorNombre,
+              decoration: InputDecoration(hintText: nombreExistente),
+            ),
+            // Input del valor
+            TextField(
+              controller: controladorValor,
+              decoration: InputDecoration(hintText: valorExistente),
+            ),
+          ],
+        ),
+        actions: [
+          // Cancelar
+          _botonCancelar(),
+          // Guardar
+          _botonEditar(gasto),
+        ],
+      ),
+    );
+  }
+
+  void openDeleteBox(Gasto gasto) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Center(child: Text("¿Borrar gasto?")),
+        actions: [
+          // Cancelar
+          _botonCancelar(),
+          // Borrar gasto
+          _botonBorrar(gasto.id),
         ],
       ),
     );
@@ -76,9 +126,12 @@ class _HomePageState extends State<HomePage> {
           itemBuilder: (context, index) {
             // Conseguir el gasto individual
             Gasto gastoIndividual = value.todoslosgastos[index];
-            return ListTile(
-              title: Text(gastoIndividual.nombre),
-              trailing: Text(gastoIndividual.valor.toString()),
+
+            return MiListaTile(
+              title: gastoIndividual.nombre,
+              trailing: formatoValor(gastoIndividual.valor),
+              onEditPressed: (context) => openEditBox(gastoIndividual),
+              onDeletePressed: (context) => openDeleteBox(gastoIndividual),
             );
           },
         ),
@@ -86,7 +139,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Cancelar 
+  // Cancelar
   Widget _botonCancelar() {
     return MaterialButton(
       onPressed: () {
@@ -96,6 +149,8 @@ class _HomePageState extends State<HomePage> {
         controladorNombre.clear();
         controladorValor.clear();
       },
+      color: Colors.grey[300], // Añadir color de fondo
+      textColor: Colors.black, // Añadir color de texto
       child: const Text("Cancelar"),
     );
   }
@@ -121,7 +176,54 @@ class _HomePageState extends State<HomePage> {
           controladorValor.clear();
         }
       },
+      color: Colors.blue, // Añadir color de fondo
+      textColor: Colors.white, // Añadir color de texto
       child: const Text("Guardar"),
     );
+  }
+
+  // Editar gasto ya existente
+  Widget _botonEditar(Gasto gasto) {
+    return MaterialButton(
+      onPressed: () async {
+        // Guardar si algún textfield ha cambiado
+        if (controladorNombre.text.isNotEmpty || controladorValor.text.isNotEmpty) {
+          // Cerrar la box
+          Navigator.pop(context);
+
+          // Crear un gasto actualizado
+          Gasto gastoActualizado = Gasto(
+            nombre: controladorNombre.text.isNotEmpty ? controladorNombre.text : gasto.nombre,
+            valor: controladorValor.text.isNotEmpty ? convertirStringaDouble(controladorValor.text) : gasto.valor,
+            fecha: DateTime.now(),
+          );
+
+          // ID del gasto viejo
+          int idExistente = gasto.id;
+
+          // Guardar en la base de datos
+          await context.read<GastoDatabase>().actualizarGasto(idExistente, gastoActualizado);
+        }
+      },
+      color: Colors.blue, // Añadir color de fondo
+      textColor: Colors.white, // Añadir color de texto
+      child: const Text("Guardar"),
+    );
+  }
+
+  // Borrar gasto
+  Widget _botonBorrar(int id){
+
+    return MaterialButton(onPressed: () async{
+      //cerrar  la box, suena feo pero decirle caja queda medio mal
+    Navigator.pop(context);
+
+
+      //borrar gasto de la base de datos 
+      await context.read<GastoDatabase>().eliminarGasto(id);
+    },
+    child: Text("Borrar")
+    );
+
   }
 }
