@@ -7,63 +7,57 @@ class GastoDatabase extends ChangeNotifier {
   static late Isar isar;
   List<Gasto> _todoslosgastos = [];
 
-  //inicializando la base de datos
+  // Inicializando la base de datos
   static Future<void> Inicializar() async {
     final dir = await getApplicationDocumentsDirectory();
     isar = await Isar.open([GastoSchema], directory: dir.path);
   }
 
-  //creamos un getter para acceder a nuestra lista, ya que es privada
+  // Creamos un getter para acceder a nuestra lista, ya que es privada
   List<Gasto> get todoslosgastos => _todoslosgastos;
 
-//OPERACIONES:
+  // OPERACIONES:
 
-//CREAR GASTO
+  // CREAR GASTO
   Future<void> crearGastoNuevo(Gasto nuevoGasto) async {
-    //añadir a la base de datos
+    // Añadir a la base de datos
     await isar.writeTxn(() => isar.gastos.put(nuevoGasto));
 
-    //leer de nuevo el gasto
+    // Leer de nuevo el gasto
     await leerGastos();
   }
 
-//LEER  GASTO
-
+  // LEER GASTO
   Future<void> leerGastos() async {
-    //para obtener nuestros datos ya existentes
+    // Para obtener nuestros datos ya existentes
     List<Gasto> fetchedGastos = await isar.gastos.where().findAll();
 
-    //añadir a la lista de gastos
+    // Añadir a la lista de gastos
     _todoslosgastos.clear();
     _todoslosgastos.addAll(fetchedGastos);
 
-    //modificar la interfaz gráfica
+    // Modificar la interfaz gráfica
     notifyListeners();
   }
 
-//Actualizar gasto
+  // ACTUALIZAR GASTO
   Future<void> actualizarGasto(int id, Gasto actualizarGasto) async {
-    //ver si el nuevo gasto tiene el mismo id que el existente
+    // Ver si el nuevo gasto tiene el mismo id que el existente
     actualizarGasto.id = id;
 
-    //actualizar en la base de datos
+    // Actualizar en la base de datos
     await isar.writeTxn(() => isar.gastos.put(actualizarGasto));
 
-    //leerlo otra vez
-
+    // Leerlo otra vez
     await leerGastos();
-
-    //eliminarlo
-
-    Future<void> eliminarGasto(int id) async {
-      //borarlo de la base de datos
-      await isar.writeTxn(() => isar.gastos.delete(id));
-
-      //leerlo de la base de datos
-
-      await leerGastos();
-    }
   }
 
-  eliminarGasto(int id) {}
+  // ELIMINAR GASTO
+  Future<void> eliminarGasto(int id) async {
+    // Borrarlo de la base de datos
+    await isar.writeTxn(() => isar.gastos.delete(id));
+
+    // Leerlo de la base de datos
+    await leerGastos();
+  }
 }
