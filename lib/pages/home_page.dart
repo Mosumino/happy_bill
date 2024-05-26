@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Center(child: Text("Editar gasto")),
+        title: const Center(child: Text("Editar gasto", style: TextStyle(fontWeight: FontWeight.w500),)),// Fondo de color gris claro
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -151,7 +151,11 @@ class _HomePageState extends State<HomePage> {
       },
       color: Colors.grey[300], // Añadir color de fondo
       textColor: Colors.black, // Añadir color de texto
+      shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15), // Bordes circulares de 12
+    ),
       child: const Text("Cancelar"),
+      
     );
   }
 
@@ -178,6 +182,9 @@ class _HomePageState extends State<HomePage> {
       },
       color: Colors.blue, // Añadir color de fondo
       textColor: Colors.white, // Añadir color de texto
+      shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15), // Bordes circulares de 12
+    ),
       child: const Text("Guardar"),
     );
   }
@@ -206,24 +213,27 @@ class _HomePageState extends State<HomePage> {
         }
       },
       color: Colors.blue, // Añadir color de fondo
-      textColor: Colors.white, // Añadir color de texto
+      textColor: Colors.white, // Añadir color de texto,
+       shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15), // Bordes circulares de 12
+    ),
       child: const Text("Guardar"),
     );
   }
 
   // Borrar gasto
-  Widget _botonBorrar(int id){
-
-    return MaterialButton(onPressed: () async{
-      //cerrar  la box, suena feo pero decirle caja queda medio mal
-    Navigator.pop(context);
-
-
-      //borrar gasto de la base de datos 
-      await context.read<GastoDatabase>().eliminarGasto(id);
-    },
-    child: Text("Borrar")
+  Widget _botonBorrar(int id) {
+    return MaterialButton(
+      onPressed: () async {
+        Navigator.pop(context);
+        await context.read<GastoDatabase>().eliminarGasto(id);
+      },
+      color: Colors.red, // Añadir color de fondo
+      textColor: Colors.white, // Añadir color de texto
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15), // Bordes circulares de 15
+      ),
+      child: const Text("Borrar"),
     );
-
   }
 }
