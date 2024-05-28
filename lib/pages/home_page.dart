@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-//Abrir editar gasto
+  // Abrir editar gasto
   void abrirEditarGasto(Gasto gasto) {
     String nombreExistente = gasto.nombre;
     String valorExistente = gasto.valor.toString();
@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-//Abrir borrar gasto
+  // Abrir borrar gasto
   void abrirBorrarGasto(Gasto gasto) {
     showDialog(
       context: context,
@@ -97,46 +97,106 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //controladores de texto
+  // Controladores de texto
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorValor = TextEditingController();
+
+  double calcularBalanceTotal(List<Gasto> gastos) {
+    return gastos.fold(0, (sum, item) => sum + item.valor);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<GastoDatabase>(
-      builder: (context, value, child) => Scaffold(
-        floatingActionButton: FloatingActionButton(
-          onPressed: abrirNuevoGasto,
-          backgroundColor: Colors.blue[700],
-          foregroundColor: Colors.white,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add),
-        ),
-        body: ListView.builder(
-          itemCount: value.todoslosgastos.length,
-          itemBuilder: (context, index) {
-            Gasto individualExpense = value.todoslosgastos[index];
+      builder: (context, value, child) {
+        // Ordenar los gastos por fecha en orden descendente (gastos más recientes primero)
+        List<Gasto> gastosOrdenados = List.from(value.todoslosgastos)
+          ..sort((a, b) => b.fecha.compareTo(a.fecha));
 
-            return TituloLista(
-              title: individualExpense.nombre,
-              trailing: formatAmount(individualExpense.valor),
-              onEditPressed: (context) => abrirEditarGasto(individualExpense),
-              onDeletePressed: (context) => abrirBorrarGasto(individualExpense),
-            );
-          },
-        ),
-      ),
+        double balanceTotal = calcularBalanceTotal(gastosOrdenados);
+        return Scaffold(
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: FloatingActionButton(
+            onPressed: abrirNuevoGasto,
+            backgroundColor: Colors.blue[700],
+            foregroundColor: Colors.white,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add),
+          ),
+          body: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 8.0),
+                padding: const EdgeInsets.all(16.0),
+                height: MediaQuery.of(context).size.height / 4,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    'Balance: ${balanceTotal.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: gastosOrdenados.length,
+                  itemBuilder: (context, index) {
+                    Gasto individualExpense = gastosOrdenados[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          individualExpense.nombre,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        trailing: Text(
+                          formatAmount(individualExpense.valor),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        onTap: () => abrirEditarGasto(individualExpense),
+                        onLongPress: () => abrirBorrarGasto(individualExpense),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  //cancelar
+  // cancelar
   Widget _botonCancelar() {
     return MaterialButton(
       onPressed: () {
-        //cerrar
+        // cerrar
         Navigator.pop(context);
 
-        //restablecer el estado de los controladores
+        // restablecer el estado de los controladores
         controladorNombre.clear();
         controladorValor.clear();
       },
@@ -144,28 +204,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //guardar
+  // guardar
   Widget _botonGuardar() {
     return MaterialButton(
       onPressed: () async {
-        //solo guarda si hay algo en el textfield
+        // solo guarda si hay algo en el textfield
         if (controladorNombre.text.isNotEmpty &&
             controladorValor.text.isNotEmpty) {
-          //cerrar
+          // cerrar
           Navigator.pop(context);
 
-          //crear nuevo gasto
+          // crear nuevo gasto
           Gasto nuevoGasto = Gasto(
             nombre: controladorNombre.text,
             valor: convertirStringaDouble(controladorValor.text),
             fecha: DateTime.now(),
           );
 
-          //guardarlo en la base de datos
-
+          // guardarlo en la base de datos
           await context.read<GastoDatabase>().crearGastoNuevo(nuevoGasto);
 
-          //restablecer controladores
+          // restablecer controladores
           controladorNombre.clear();
           controladorValor.clear();
         }
@@ -174,7 +233,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //Guardar -> Edicion gasto existente
+  // Guardar -> Edicion gasto existente
   Widget _EditarGastoExistente(Gasto gasto) {
     return MaterialButton(
       onPressed: () async {
@@ -182,7 +241,7 @@ class _HomePageState extends State<HomePage> {
         if (controladorNombre.text.isNotEmpty ||
             controladorValor.text.isNotEmpty) {
           Navigator.pop(context);
-          //Crear un nuevo gasto
+          // Crear un nuevo gasto
           Gasto gastoActualizado = Gasto(
             nombre: controladorNombre.text.isNotEmpty
                 ? controladorNombre.text
@@ -196,7 +255,7 @@ class _HomePageState extends State<HomePage> {
           // Id anterior
           int idActual = gasto.id;
 
-          //Guardarlo en DB
+          // Guardarlo en DB
           await context
               .read<GastoDatabase>()
               .actualizarGasto(idActual, gastoActualizado);
@@ -206,7 +265,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //Boton Borrar
+  // Boton Borrar
   Widget _botonBorrar(int id) {
     return MaterialButton(
       onPressed: () async {
