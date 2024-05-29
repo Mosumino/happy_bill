@@ -1,8 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:happy_bill/Componentes/Titulo_Lista.dart';
 import 'package:happy_bill/database/gasto_database.dart';
 import 'package:happy_bill/helper_functions/helper_functions.dart';
+import 'package:happy_bill/main.dart';
 import 'package:happy_bill/models/gasto.dart';
+import 'package:happy_bill/pages/estadisticas.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,11 +16,20 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
+  var listaWidgets = [
+    MyApp(),
+    Estadisticas()
+  ];
+
+  int indice = 0;
+
+
   void abrirNuevoGasto() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Nuevo gasto"),
+        title: const Text("Nuevo gasto", style: TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -52,7 +64,7 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Editar gasto"),
+        title: const Text("Editar gasto", style: TextStyle(fontWeight: FontWeight.bold),),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -85,7 +97,7 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Borrar gasto?"),
+        title: const Text("¿Borrar gasto?", style: TextStyle(fontWeight: FontWeight.bold),),
         actions: [
           //cancelar
           _botonCancelar(),
@@ -115,6 +127,24 @@ class _HomePageState extends State<HomePage> {
 
         double balanceTotal = calcularBalanceTotal(gastosOrdenados);
         return Scaffold(
+          bottomNavigationBar: BottomNavigationBar(
+            onTap: (value) {
+          
+            },
+            backgroundColor: Colors.grey[300],
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.home),
+                label: "Inicio",
+                ),
+                BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.graph_circle),
+                label: "Estadisticas",
+                )
+            ],
+            ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: FloatingActionButton(
@@ -127,25 +157,56 @@ class _HomePageState extends State<HomePage> {
           body: Column(
             children: [
               Container(
-                margin: const EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 8.0),
-                padding: const EdgeInsets.all(16.0),
-                height: MediaQuery.of(context).size.height / 4,
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    'Balance: ${balanceTotal.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+  margin: const EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 8.0),
+  padding: const EdgeInsets.all(16.0),
+  height: MediaQuery.of(context).size.height / 4,
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(20),
+    gradient: const LinearGradient(
+      colors: [Colors.blue, Color.fromARGB(255, 56, 133, 196), Color.fromARGB(255, 117, 173, 219)], // Puedes ajustar los colores aquí
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+  ),
+  child: Center(
+    child: Center(
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Text(
+        'Balance Total',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      const SizedBox(height: 25,),
+      Text(
+        '\$${balanceTotal.toStringAsFixed(2)}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 34,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  ),
+),
+  ),
+),
+
+const SizedBox(height: 10),
+const Padding(
+  padding: EdgeInsets.fromLTRB(16.0, 5.0, 10.0, 8.0), // Ajusta estos valores según sea necesario
+  child: Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      "Transacciones",
+      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    ),
+  ),
+),
               Expanded(
                 child: ListView.builder(
                   itemCount: gastosOrdenados.length,
@@ -190,90 +251,140 @@ class _HomePageState extends State<HomePage> {
   }
 
   // cancelar
-  Widget _botonCancelar() {
-    return MaterialButton(
-      onPressed: () {
+Widget _botonCancelar() {
+  return MaterialButton(
+    onPressed: () {
+      // cerrar
+      Navigator.pop(context);
+
+      // restablecer el estado de los controladores
+      controladorNombre.clear();
+      controladorValor.clear();
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+      decoration: BoxDecoration(
+        color: Colors.grey, // Fondo rojo
+        borderRadius: BorderRadius.circular(20.0), // Bordes circulares
+      ),
+      child: const Text(
+        "Cancelar",
+        style: TextStyle(
+          color: Colors.white, // Texto blanco
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
+  // guardar
+Widget _botonGuardar() {
+  return MaterialButton(
+    onPressed: () async {
+      // solo guarda si hay algo en el textfield
+      if (controladorNombre.text.isNotEmpty && controladorValor.text.isNotEmpty) {
         // cerrar
         Navigator.pop(context);
 
-        // restablecer el estado de los controladores
+        // crear nuevo gasto
+        Gasto nuevoGasto = Gasto(
+          nombre: controladorNombre.text,
+          valor: convertirStringaDouble(controladorValor.text),
+          fecha: DateTime.now(),
+        );
+
+        // guardarlo en la base de datos
+        await context.read<GastoDatabase>().crearGastoNuevo(nuevoGasto);
+
+        // restablecer controladores
         controladorNombre.clear();
         controladorValor.clear();
-      },
-      child: const Text("Cancelar"),
-    );
-  }
-
-  // guardar
-  Widget _botonGuardar() {
-    return MaterialButton(
-      onPressed: () async {
-        // solo guarda si hay algo en el textfield
-        if (controladorNombre.text.isNotEmpty &&
-            controladorValor.text.isNotEmpty) {
-          // cerrar
-          Navigator.pop(context);
-
-          // crear nuevo gasto
-          Gasto nuevoGasto = Gasto(
-            nombre: controladorNombre.text,
-            valor: convertirStringaDouble(controladorValor.text),
-            fecha: DateTime.now(),
-          );
-
-          // guardarlo en la base de datos
-          await context.read<GastoDatabase>().crearGastoNuevo(nuevoGasto);
-
-          // restablecer controladores
-          controladorNombre.clear();
-          controladorValor.clear();
-        }
-      },
-      child: const Text("Guardar"),
-    );
-  }
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        borderRadius: BorderRadius.circular(20.0),
+      ),
+      child: const Text(
+        "Guardar",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
 
   // Guardar -> Edicion gasto existente
-  Widget _EditarGastoExistente(Gasto gasto) {
-    return MaterialButton(
-      onPressed: () async {
-        // Guardar si el campo esta lleno
-        if (controladorNombre.text.isNotEmpty ||
-            controladorValor.text.isNotEmpty) {
-          Navigator.pop(context);
-          // Crear un nuevo gasto
-          Gasto gastoActualizado = Gasto(
-            nombre: controladorNombre.text.isNotEmpty
-                ? controladorNombre.text
-                : gasto.nombre,
-            valor: controladorValor.text.isNotEmpty
-                ? convertirStringaDouble(controladorValor.text)
-                : gasto.valor,
-            fecha: DateTime.now(),
-          );
-
-          // Id anterior
-          int idActual = gasto.id;
-
-          // Guardarlo en DB
-          await context
-              .read<GastoDatabase>()
-              .actualizarGasto(idActual, gastoActualizado);
-        }
-      },
-      child: const Text("Guardar"),
-    );
-  }
-
-  // Boton Borrar
-  Widget _botonBorrar(int id) {
-    return MaterialButton(
-      onPressed: () async {
+Widget _EditarGastoExistente(Gasto gasto) {
+  return MaterialButton(
+    onPressed: () async {
+      // Guardar si el campo esta lleno
+      if (controladorNombre.text.isNotEmpty || controladorValor.text.isNotEmpty) {
         Navigator.pop(context);
+        // Crear un nuevo gasto
+        Gasto gastoActualizado = Gasto(
+          nombre: controladorNombre.text.isNotEmpty
+              ? controladorNombre.text
+              : gasto.nombre,
+          valor: controladorValor.text.isNotEmpty
+              ? convertirStringaDouble(controladorValor.text)
+              : gasto.valor,
+          fecha: DateTime.now(),
+        );
 
-        await context.read<GastoDatabase>().eliminarGasto(id);
-      },
-      child: const Text("Borrar"),
-    );
-  }
+        // Id anterior
+        int idActual = gasto.id;
+
+        // Guardarlo en DB
+        await context
+            .read<GastoDatabase>()
+            .actualizarGasto(idActual, gastoActualizado);
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+      decoration: BoxDecoration(
+        color: Colors.blue, // Fondo azul
+        borderRadius: BorderRadius.circular(20.0), // Bordes circulares
+      ),
+      child: const Text(
+        "Guardar",
+        style: TextStyle(
+          color: Colors.white, // Texto blanco
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
+
+
+Widget _botonBorrar(int id) {
+  return MaterialButton(
+    onPressed: () async {
+      Navigator.pop(context);
+
+      await context.read<GastoDatabase>().eliminarGasto(id);
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+      decoration: BoxDecoration(
+        color: Colors.red, // Fondo rojo
+        borderRadius: BorderRadius.circular(20.0), // Bordes circulares
+      ),
+      child: const Text(
+        "Borrar",
+        style: TextStyle(
+          color: Colors.white, // Texto blanco
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
+
 }
